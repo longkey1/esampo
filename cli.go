@@ -15,13 +15,15 @@ import (
 
 const (
 	// Version
-	Version string = "0.0.1"
-	// Version
-	DefaultConfigFileName string = ".esamporc"
+	Version string = "0.0.2"
 	// ExitCodeOK ...
 	ExitCodeOK int = 0
 	// ExitCodeError ..
 	ExitCodeError int = 1
+	// DefaultConfigFileName...
+	DefaultConfigFileName string = ".esamporc"
+	// DefaultBeforeDayNumber...
+	DefaultBeforeDayNumber int = -1
 )
 
 // CLI ...
@@ -32,10 +34,10 @@ type CLI struct {
 
 // Config ...
 type Config struct {
-	AccessToken  string `toml:"access_token"`
-	TeamName     string `toml:"team_name"`
-	MyScreenName string `toml:"my_screen_name"`
-	Path         string `toml:"path"`
+	AccessToken            string `toml:"access_token"`
+	TeamName               string `toml:"team_name"`
+	MyScreenName           string `toml:"my_screen_name"`
+	Path                   string `toml:"path"`
 }
 
 // Run ...
@@ -58,16 +60,16 @@ func (c *CLI) Run(args []string) int {
 			Name:        "before-day-number, b",
 			Usage:       "before day number",
 			Destination: &beforeDayNumber,
-			Value:       -1,
+			Value:       DefaultBeforeDayNumber,
 		},
 	}
 	app.Action = func(c *cli.Context) error {
-		conf, err := loadConfig(configPath)
+		cnf, err := loadConfig(configPath)
 		if err != nil {
 			return err
 		}
 
-		return open(c, conf, beforeDayNumber)
+		return open(c, cnf, beforeDayNumber)
 	}
 
 	err := app.Run(args)
