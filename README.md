@@ -4,16 +4,16 @@ It is a tool to open a daily report of a specific day at once with a browser in 
 
 ## Usage
 
-Open yesterday's daily report.
+Open yesterday's daily reports.
 
 ```shell
 $ esampo
 ```
 
-Open daily 3 days ago.
+Open daily reports of 3 days ago.
 
 ```shell
-$ esampo -b -3
+$ esampo -b 3
 ```
 
 ## Installation 

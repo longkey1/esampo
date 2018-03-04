@@ -15,7 +15,7 @@ import (
 
 const (
 	// Version
-	Version string = "0.0.2"
+	Version string = "0.0.3"
 	// ExitCodeOK ...
 	ExitCodeOK int = 0
 	// ExitCodeError ..
@@ -23,7 +23,7 @@ const (
 	// DefaultConfigFileName...
 	DefaultConfigFileName string = ".esamporc"
 	// DefaultBeforeDayNumber...
-	DefaultBeforeDayNumber int = -1
+	DefaultBeforeDayNumber int = 1
 )
 
 // CLI ...
@@ -34,10 +34,10 @@ type CLI struct {
 
 // Config ...
 type Config struct {
-	AccessToken            string `toml:"access_token"`
-	TeamName               string `toml:"team_name"`
-	MyScreenName           string `toml:"my_screen_name"`
-	Path                   string `toml:"path"`
+	AccessToken  string `toml:"access_token"`
+	TeamName     string `toml:"team_name"`
+	MyScreenName string `toml:"my_screen_name"`
+	Path         string `toml:"path"`
 }
 
 // Run ...
@@ -82,7 +82,8 @@ func (c *CLI) Run(args []string) int {
 }
 
 func defaultConfigPath() string {
-	home, err := homedir.Dir(); if err != nil {
+	home, err := homedir.Dir()
+	if err != nil {
 		panic(err)
 	}
 
@@ -101,7 +102,7 @@ func open(ctx *cli.Context, cnf *Config, beforeDayNumber int) error {
 	client := esa.NewClient(cnf.AccessToken)
 
 	q := url.Values{}
-	q.Add("in", time.Now().AddDate(0, 0, beforeDayNumber).Format(cnf.Path))
+	q.Add("in", time.Now().AddDate(0, 0, beforeDayNumber*-1).Format(cnf.Path))
 	res, err := client.Post.GetPosts(cnf.TeamName, q)
 	if err != nil {
 		return err
