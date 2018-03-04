@@ -1,10 +1,34 @@
 # esampo
 
-## Configuration file sample (`$HOME/.esamporc`)
+It is a tool to open a daily report of a specific day at once with a browser in [esa.io](https://esa.io/).
+
+## Usage
+
+Open yesterday's daily report.
+
+```shell
+$ esampo
+```
+
+Open daily 3 days ago.
+
+```shell
+$ esampo -b -3
+```
+
+## Installation 
+
+You can download binary from [release page](https://github.com/longkey1/esampo/releases).
+
+## Configuration
 
 ```toml
+# $HOME/.esamporc
+
 access_token = "your access token"
 team_name = "your team name"
 my_screen_name = "your screen name"
 path = "日報/2006/01/02"
 ```
+
+`path` is using [golang's time format](https://golang.org/src/time/format.go).
