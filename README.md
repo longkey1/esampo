@@ -2,6 +2,8 @@
 
 It is a tool to open a daily report of a specific day at once with a browser in [esa.io](https://esa.io/).
 
+![esampo](https://user-images.githubusercontent.com/58566/36960482-929094ea-208a-11e8-9958-975926d1b34c.gif)
+
 ## Usage
 
 Open yesterday's daily reports.
