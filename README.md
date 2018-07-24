@@ -11,6 +11,11 @@ Open yesterday's daily reports.
 ```shell
 $ esampo
 ```
+or
+
+```shell
+$ esampo -b 1
+```
 
 Open daily reports of 3 days ago.
 
@@ -25,9 +30,9 @@ You can download binary from [release page](https://github.com/longkey1/esampo/r
 ## Configuration
 
 ```toml
-# $HOME/.esamporc
+# $HOME/.config/esampo/config.toml
 
-access_token = "your access token"
+access_token = "esa access token"
 team_name = "your team name"
 my_screen_name = "your screen name"
 path = "日報/2006/01/02"
