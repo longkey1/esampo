@@ -15,13 +15,13 @@ import (
 
 const (
 	// Version
-	Version string = "0.0.3"
+	Version string = "0.1.0"
 	// ExitCodeOK ...
 	ExitCodeOK int = 0
 	// ExitCodeError ..
 	ExitCodeError int = 1
 	// DefaultConfigFileName...
-	DefaultConfigFileName string = ".esamporc"
+	DefaultConfigFileName string = "config.toml"
 	// DefaultBeforeDayNumber...
 	DefaultBeforeDayNumber int = 1
 )
@@ -87,7 +87,7 @@ func defaultConfigPath() string {
 		panic(err)
 	}
 
-	return fmt.Sprintf("%s/%s", home, DefaultConfigFileName)
+	return fmt.Sprintf("%s/.config/esampo/%s", home, DefaultConfigFileName)
 }
 
 func loadConfig(path string) (*Config, error) {
