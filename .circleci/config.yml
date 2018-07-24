@@ -3,7 +3,7 @@ jobs:
   build:
     docker:
       - image: circleci/golang:1.8
-    working_directory: /go/src/github.com/qcmnagai/esampo
+    working_directory: /go/src/github.com/longkey1/esampo
     steps:
       - checkout
       - restore_cache:
@@ -17,7 +17,7 @@ jobs:
   release:
     docker:
       - image: circleci/golang:1.8
-    working_directory: /go/src/github.com/qcmnagai/esampo
+    working_directory: /go/src/github.com/longkey1/esampo
     steps:
       - checkout
       - restore_cache:
