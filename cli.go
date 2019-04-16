@@ -15,7 +15,7 @@ import (
 
 const (
 	// Version
-	Version string = "0.2.0"
+	Version string = "0.2.1"
 	// ExitCodeOK ...
 	ExitCodeOK int = 0
 	// ExitCodeError ..
@@ -24,8 +24,6 @@ const (
 	DefaultConfigFileName string = "config.toml"
 	// DefaultBeforeDayNumber...
 	DefaultBeforeDayNumber int = 1
-	// DefaultOnlyMe...
-	DefaultOnlyMe bool = false
 )
 
 // CLI ...
@@ -69,7 +67,7 @@ func (c *CLI) Run(args []string) int {
 			Name:        "me, m",
 			Usage:       "only me",
 			Destination: &onlyMe,
-			Hidden: 	 DefaultOnlyMe,
+			Hidden: 	 false,
 		},
 	}
 	app.Action = func(c *cli.Context) error {
@@ -78,12 +76,12 @@ func (c *CLI) Run(args []string) int {
 			return err
 		}
 
-		return open(c, cnf, beforeDayNumber, onlyMe)
+		return open(cnf, beforeDayNumber, onlyMe)
 	}
 
 	err := app.Run(args)
 	if err != nil {
-		fmt.Fprintln(c.errStream, err)
+		_, _ = fmt.Fprintln(c.errStream, err)
 		return ExitCodeError
 	}
 
@@ -107,7 +105,7 @@ func loadConfig(path string) (*Config, error) {
 	return c, nil
 }
 
-func open(ctx *cli.Context, cnf *Config, beforeDayNumber int, onlyMe bool) error {
+func open(cnf *Config, beforeDayNumber int, onlyMe bool) error {
 	client := esa.NewClient(cnf.AccessToken)
 
 	q := url.Values{}
