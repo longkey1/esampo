@@ -15,7 +15,7 @@ import (
 
 const (
 	// Version
-	Version string = "0.1.2"
+	Version string = "0.2.0"
 	// ExitCodeOK ...
 	ExitCodeOK int = 0
 	// ExitCodeError ..
@@ -24,6 +24,8 @@ const (
 	DefaultConfigFileName string = "config.toml"
 	// DefaultBeforeDayNumber...
 	DefaultBeforeDayNumber int = 1
+	// DefaultOnlyMe...
+	DefaultOnlyMe bool = false
 )
 
 // CLI ...
@@ -44,6 +46,7 @@ type Config struct {
 func (c *CLI) Run(args []string) int {
 	var configPath string
 	var beforeDayNumber int
+	var onlyMe bool
 
 	app := cli.NewApp()
 	app.Name = "esampo"
@@ -52,7 +55,7 @@ func (c *CLI) Run(args []string) int {
 	app.Flags = []cli.Flag{
 		cli.StringFlag{
 			Name:        "config, c",
-			Usage:       "Load configration from `FILE`",
+			Usage:       "Load configuration from `FILE`",
 			Destination: &configPath,
 			Value:       defaultConfigPath(),
 		},
@@ -62,6 +65,12 @@ func (c *CLI) Run(args []string) int {
 			Destination: &beforeDayNumber,
 			Value:       DefaultBeforeDayNumber,
 		},
+		cli.BoolFlag{
+			Name:        "me, m",
+			Usage:       "only me",
+			Destination: &onlyMe,
+			Hidden: 	 DefaultOnlyMe,
+		},
 	}
 	app.Action = func(c *cli.Context) error {
 		cnf, err := loadConfig(configPath)
@@ -69,7 +78,7 @@ func (c *CLI) Run(args []string) int {
 			return err
 		}
 
-		return open(c, cnf, beforeDayNumber)
+		return open(c, cnf, beforeDayNumber, onlyMe)
 	}
 
 	err := app.Run(args)
@@ -98,7 +107,7 @@ func loadConfig(path string) (*Config, error) {
 	return c, nil
 }
 
-func open(ctx *cli.Context, cnf *Config, beforeDayNumber int) error {
+func open(ctx *cli.Context, cnf *Config, beforeDayNumber int, onlyMe bool) error {
 	client := esa.NewClient(cnf.AccessToken)
 
 	q := url.Values{}
@@ -108,7 +117,10 @@ func open(ctx *cli.Context, cnf *Config, beforeDayNumber int) error {
 		return err
 	}
 	for _, p := range res.Posts {
-		if p.CreatedBy.ScreenName == cnf.MyScreenName {
+		if onlyMe == false && p.CreatedBy.ScreenName == cnf.MyScreenName {
+			continue
+		}
+		if onlyMe == true && p.CreatedBy.ScreenName != cnf.MyScreenName {
 			continue
 		}
 		err := browser.OpenURL(p.URL)
