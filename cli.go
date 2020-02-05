@@ -15,7 +15,7 @@ import (
 
 const (
 	// Version
-	Version string = "0.2.0"
+	Version string = "0.3.0"
 	// ExitCodeOK ...
 	ExitCodeOK int = 0
 	// ExitCodeError ..
@@ -24,8 +24,6 @@ const (
 	DefaultConfigFileName string = "config.toml"
 	// DefaultBeforeDayNumber...
 	DefaultBeforeDayNumber int = 1
-	// DefaultOnlyMe...
-	DefaultOnlyMe bool = false
 )
 
 // CLI ...
@@ -46,7 +44,9 @@ type Config struct {
 func (c *CLI) Run(args []string) int {
 	var configPath string
 	var beforeDayNumber int
-	var onlyMe bool
+	var onlyUser string
+	var startDate string
+	var endDate string
 
 	app := cli.NewApp()
 	app.Name = "esampo"
@@ -61,15 +61,27 @@ func (c *CLI) Run(args []string) int {
 		},
 		cli.IntFlag{
 			Name:        "before-day-number, b",
-			Usage:       "before day number",
+			Usage:       "Before day number",
 			Destination: &beforeDayNumber,
 			Value:       DefaultBeforeDayNumber,
 		},
-		cli.BoolFlag{
-			Name:        "me, m",
-			Usage:       "only me",
-			Destination: &onlyMe,
-			Hidden: 	 DefaultOnlyMe,
+		cli.StringFlag{
+			Name:        "user, u",
+			Usage:       "Only user",
+			Destination: &onlyUser,
+			Value:      "",
+		},
+		cli.StringFlag{
+			Name:        "start-date, s",
+			Usage:       "Start date",
+			Destination: &startDate,
+			Value:      "",
+		},
+		cli.StringFlag{
+			Name:        "end-date, e",
+			Usage:       "End date",
+			Destination: &endDate,
+			Value:      "",
 		},
 	}
 	app.Action = func(c *cli.Context) error {
@@ -78,7 +90,7 @@ func (c *CLI) Run(args []string) int {
 			return err
 		}
 
-		return open(c, cnf, beforeDayNumber, onlyMe)
+		return run(c, cnf, beforeDayNumber, onlyUser, startDate, endDate)
 	}
 
 	err := app.Run(args)
@@ -107,20 +119,37 @@ func loadConfig(path string) (*Config, error) {
 	return c, nil
 }
 
-func open(ctx *cli.Context, cnf *Config, beforeDayNumber int, onlyMe bool) error {
+func run(ctx *cli.Context, cnf *Config, beforeDayNumber int, onlyUserString string, startDateString string, endDateString string) error {
+	if (startDateString == "" || endDateString == "") {
+		targetDate :=time.Now().AddDate(0, 0, beforeDayNumber*-1)
+		return open(ctx, cnf, targetDate, onlyUserString)
+	}
+
+	start, err := time.Parse("2006-01-02", startDateString)
+	if err != nil {
+		return err
+	}
+	end, err := time.Parse("2006-01-02", endDateString)
+	if err != nil {
+		return err
+	}
+	for target := start; target.After(end) == false; target = target.AddDate(0, 0, 1) {
+		open(ctx, cnf, target, onlyUserString)
+	}
+	return nil
+}
+
+func open(ctx *cli.Context, cnf *Config, targetDate time.Time, onlyUser string) error {
 	client := esa.NewClient(cnf.AccessToken)
 
 	q := url.Values{}
-	q.Add("in", time.Now().AddDate(0, 0, beforeDayNumber*-1).Format(cnf.Path))
+	q.Add("in", targetDate.Format(cnf.Path))
 	res, err := client.Post.GetPosts(cnf.TeamName, q)
 	if err != nil {
 		return err
 	}
 	for _, p := range res.Posts {
-		if onlyMe == false && p.CreatedBy.ScreenName == cnf.MyScreenName {
-			continue
-		}
-		if onlyMe == true && p.CreatedBy.ScreenName != cnf.MyScreenName {
+		if onlyUser != "" && p.CreatedBy.ScreenName != onlyUser {
 			continue
 		}
 		err := browser.OpenURL(p.URL)
