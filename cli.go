@@ -24,6 +24,8 @@ const (
 	DefaultConfigFileName string = "config.toml"
 	// DefaultBeforeDayNumber...
 	DefaultBeforeDayNumber int = 1
+	// DefaultMaxPageNumber...
+	DefaultMaxPageNumber int = 50
 )
 
 // CLI ...
@@ -34,10 +36,10 @@ type CLI struct {
 
 // Config ...
 type Config struct {
-	AccessToken  string `toml:"access_token"`
-	TeamName     string `toml:"team_name"`
-	MyScreenName string `toml:"my_screen_name"`
-	Path         string `toml:"path"`
+	AccessToken   string `toml:"access_token"`
+	TeamName      string `toml:"team_name"`
+	MyScreenName  string `toml:"my_screen_name"`
+	Path          string `toml:"path"`
 }
 
 // Run ...
@@ -90,12 +92,12 @@ func (c *CLI) Run(args []string) int {
 			return err
 		}
 
-		return run(c, cnf, beforeDayNumber, onlyUser, startDate, endDate)
+		return run(cnf, beforeDayNumber, onlyUser, startDate, endDate)
 	}
 
 	err := app.Run(args)
 	if err != nil {
-		fmt.Fprintln(c.errStream, err)
+		_, _ = fmt.Fprintln(c.errStream, err)
 		return ExitCodeError
 	}
 
@@ -119,10 +121,10 @@ func loadConfig(path string) (*Config, error) {
 	return c, nil
 }
 
-func run(ctx *cli.Context, cnf *Config, beforeDayNumber int, onlyUserString string, startDateString string, endDateString string) error {
-	if (startDateString == "" || endDateString == "") {
+func run(cnf *Config, beforeDayNumber int, onlyUserString string, startDateString string, endDateString string) error {
+	if startDateString == "" || endDateString == "" {
 		targetDate :=time.Now().AddDate(0, 0, beforeDayNumber*-1)
-		return open(ctx, cnf, targetDate, onlyUserString)
+		return open(cnf, targetDate, onlyUserString)
 	}
 
 	start, err := time.Parse("2006-01-02", startDateString)
@@ -134,19 +136,30 @@ func run(ctx *cli.Context, cnf *Config, beforeDayNumber int, onlyUserString stri
 		return err
 	}
 	for target := start; target.After(end) == false; target = target.AddDate(0, 0, 1) {
-		open(ctx, cnf, target, onlyUserString)
+		err = open(cnf, target, onlyUserString)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func open(ctx *cli.Context, cnf *Config, targetDate time.Time, onlyUser string) error {
+func open(cnf *Config, targetDate time.Time, onlyUser string) error {
 	client := esa.NewClient(cnf.AccessToken)
 
 	q := url.Values{}
 	q.Add("in", targetDate.Format(cnf.Path))
+	if onlyUser != "" {
+		q.Add("user", onlyUser)
+	} else {
+		q.Add("-user", cnf.MyScreenName)
+	}
 	res, err := client.Post.GetPosts(cnf.TeamName, q)
 	if err != nil {
 		return err
+	}
+	if len(res.Posts) > DefaultMaxPageNumber {
+		return fmt.Errorf("%d pages count %d over", len(res.Posts), DefaultMaxPageNumber)
 	}
 	for _, p := range res.Posts {
 		if onlyUser != "" && p.CreatedBy.ScreenName != onlyUser {
