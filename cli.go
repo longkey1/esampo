@@ -24,8 +24,6 @@ const (
 	DefaultConfigFileName string = "config.toml"
 	// DefaultBeforeDayNumber...
 	DefaultBeforeDayNumber int = 1
-	// DefaultMaxPageNumber...
-	DefaultMaxPageNumber int = 50
 )
 
 // CLI ...
@@ -49,6 +47,7 @@ func (c *CLI) Run(args []string) int {
 	var onlyUser string
 	var startDate string
 	var endDate string
+	var month string
 
 	app := cli.NewApp()
 	app.Name = "esampo"
@@ -62,7 +61,7 @@ func (c *CLI) Run(args []string) int {
 			Value:       defaultConfigPath(),
 		},
 		cli.IntFlag{
-			Name:        "before-day-number, b",
+			Name:        "before-day-number, bd",
 			Usage:       "Before day number",
 			Destination: &beforeDayNumber,
 			Value:       DefaultBeforeDayNumber,
@@ -85,6 +84,12 @@ func (c *CLI) Run(args []string) int {
 			Destination: &endDate,
 			Value:      "",
 		},
+		cli.StringFlag{
+			Name:        "month, m",
+			Usage:       "Target month",
+			Destination: &month,
+			Value:      "",
+		},
 	}
 	app.Action = func(c *cli.Context) error {
 		cnf, err := loadConfig(configPath)
@@ -92,7 +97,7 @@ func (c *CLI) Run(args []string) int {
 			return err
 		}
 
-		return run(cnf, beforeDayNumber, onlyUser, startDate, endDate)
+		return run(cnf, beforeDayNumber, onlyUser, startDate, endDate, month)
 	}
 
 	err := app.Run(args)
@@ -121,20 +126,31 @@ func loadConfig(path string) (*Config, error) {
 	return c, nil
 }
 
-func run(cnf *Config, beforeDayNumber int, onlyUserString string, startDateString string, endDateString string) error {
-	if startDateString == "" || endDateString == "" {
+func run(cnf *Config, beforeDayNumber int, onlyUserString string, startDateString string, endDateString string, monthString string) error {
+	if (startDateString == "" || endDateString == "") && monthString == "" {
 		targetDate :=time.Now().AddDate(0, 0, beforeDayNumber*-1)
 		return open(cnf, targetDate, onlyUserString)
 	}
 
-	start, err := time.Parse("2006-01-02", startDateString)
-	if err != nil {
-		return err
+	var start, end time.Time
+	var err error
+	if monthString != "" {
+		start, err = time.Parse("2006-01-02", monthString + "-01")
+		if err != nil {
+			return err
+		}
+		end = start.AddDate(0,1,0).Add(-1)
+	} else {
+		start, err = time.Parse("2006-01-02", startDateString)
+		if err != nil {
+			return err
+		}
+		end, err = time.Parse("2006-01-02", endDateString)
+		if err != nil {
+			return err
+		}
 	}
-	end, err := time.Parse("2006-01-02", endDateString)
-	if err != nil {
-		return err
-	}
+
 	for target := start; target.After(end) == false; target = target.AddDate(0, 0, 1) {
 		err = open(cnf, target, onlyUserString)
 		if err != nil {
@@ -157,9 +173,6 @@ func open(cnf *Config, targetDate time.Time, onlyUser string) error {
 	res, err := client.Post.GetPosts(cnf.TeamName, q)
 	if err != nil {
 		return err
-	}
-	if len(res.Posts) > DefaultMaxPageNumber {
-		return fmt.Errorf("%d pages count %d over", len(res.Posts), DefaultMaxPageNumber)
 	}
 	for _, p := range res.Posts {
 		if onlyUser != "" && p.CreatedBy.ScreenName != onlyUser {
